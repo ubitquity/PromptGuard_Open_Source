@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptGuard | Zero-Trust LLM Protection</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #6c2bd9;
+            --primary-light: #8b5cf6;
+            --primary-dark: #4c1d95;
+            --accent: #06d6a0;
+            --accent-dark: #05b384;
+            --bg: #0a0a0f;
+            --bg-card: #13131a;
+            --bg-card-hover: #1a1a24;
+            --border: #1e1e2e;
+            --text: #e4e4eb;
+            --text-muted: #8888a0;
+            --text-bright: #ffffff;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ─── Navbar ─── */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-bright);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text-bright); }
+        .btn-nav {
+            background: var(--primary);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn-nav:hover { background: var(--primary-light); }
+
+        /* ─── Hero ─── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(108, 43, 217, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-content { max-width: 720px; position: relative; z-index: 1; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        h1 {
+            font-size: clamp(40px, 6vw, 64px);
+            font-weight: 800;
+            color: var(--text-bright);
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        h1 span {
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-sub {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 540px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+        .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            box-shadow: 0 4px 24px rgba(108, 43, 217, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(108, 43, 217, 0.45);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-outline:hover {
+            background: var(--bg-card);
+            border-color: var(--text-muted);
+        }
+
+        /* ─── Section ─── */
+        section { padding: 100px 24px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary-light);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 800;
+            color: var(--text-bright);
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+        .section-sub {
+            font-size: 16px;
+            color: var(--text-muted);
+            max-width: 560px;
+            line-height: 1.7;
+        }
+
+        /* ─── Features ─── */
+        #features { background: var(--bg); }
+        .features-header { text-align: center; margin-bottom: 60px; }
+        .features-header .section-sub { margin: 0 auto; }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+        .fi-purple { background: rgba(108, 43, 217, 0.15); }
+        .fi-green { background: rgba(6, 214, 160, 0.15); }
+        .fi-red { background: rgba(239, 68, 68, 0.15); }
+        .fi-blue { background: rgba(59, 130, 246, 0.15); }
+        .fi-amber { background: rgba(245, 158, 11, 0.15); }
+        .fi-cyan { background: rgba(6, 182, 212, 0.15); }
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* ─── How It Works ─── */
+        #how-it-works { background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 32px;
+            margin-top: 48px;
+        }
+        .step { text-align: center; }
+        .step-num {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: #fff;
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .step h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-bottom: 8px;
+        }
+        .step p {
+            font-size: 14px;
+            color: var(--text-muted);
+            max-width: 260px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* ─── Pricing ─── */
+        #pricing { background: var(--bg); }
+        .pricing-header { text-align: center; margin-bottom: 60px; }
+        .pricing-header .section-sub { margin: 0 auto; }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+            max-width: 780px;
+            margin: 0 auto;
+        }
+        .price-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px 32px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .price-card:hover { transform: translateY(-4px); }
+        .price-card.featured {
+            border-color: var(--primary);
+            box-shadow: 0 0 60px rgba(108, 43, 217, 0.15);
+        }
+        .popular-tag {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 16px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .plan-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .plan-price {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--text-bright);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .plan-price .currency { font-size: 24px; vertical-align: top; color: var(--text-muted); }
+        .plan-price .period { font-size: 16px; font-weight: 500; color: var(--text-muted); }
+        .plan-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+        .plan-features { list-style: none; margin-bottom: 32px; }
+        .plan-features li {
+            font-size: 14px;
+            color: var(--text);
+            padding: 8px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .plan-features li:last-child { border-bottom: none; }
+        .check {
+            color: var(--accent);
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .cross {
+            color: var(--text-muted);
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+            opacity: 0.4;
+        }
+        .muted-feature { color: var(--text-muted); opacity: 0.5; }
+        .btn-plan {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-free {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-free:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--text-muted);
+        }
+        .btn-licensed {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            box-shadow: 0 4px 24px rgba(108, 43, 217, 0.3);
+        }
+        .btn-licensed:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(108, 43, 217, 0.45);
+        }
+
+        /* ─── Tech ─── */
+        #tech { background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .tech-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 32px;
+        }
+        .tech-pill {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .tech-pill:hover {
+            border-color: var(--primary);
+            color: var(--text-bright);
+        }
+
+        /* ─── CTA ─── */
+        .cta-section {
+            text-align: center;
+            padding: 100px 24px;
+            position: relative;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(6, 214, 160, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .cta-section h2 {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 800;
+            color: var(--text-bright);
+            margin-bottom: 16px;
+        }
+        .cta-section p {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* ─── Footer ─── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 24px;
+        }
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .footer-copy {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--text-bright); }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .features-grid { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+            .steps { grid-template-columns: 1fr; }
+            .footer-inner { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── Navigation ─── -->
+<nav>
+    <div class="nav-inner">
+        <a href="#" class="logo">
+            <div class="logo-icon">&#x1f6e1;</div>
+            PromptGuard
+        </a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#tech">Tech Stack</a>
+            <a href="index.html" class="btn-nav">Launch App</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ─── Hero ─── -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="badge"><span class="badge-dot"></span> Crypto Audit Scanner dApps Suite</div>
+        <h1>Zero-Trust Protection<br>for <span>Your LLMs</span></h1>
+        <p class="hero-sub">
+            Shield your AI models from prompt-poisoning, injection attacks, and unauthorized system prompts with blockchain-verified audit trails on the XPR Network.
+        </p>
+        <div class="hero-actions">
+            <a href="#pricing" class="btn btn-primary">Get Started</a>
+            <a href="#features" class="btn btn-outline">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Features ─── -->
+<section id="features">
+    <div class="container">
+        <div class="features-header">
+            <p class="section-label">Features</p>
+            <h2 class="section-title">Enterprise-Grade LLM Security</h2>
+            <p class="section-sub">Every prompt is hashed, signed, and anchored to an immutable blockchain ledger &mdash; so you always know what went in and what came out.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon fi-purple">&#x1f512;</div>
+                <h3>Prompt Injection Defense</h3>
+                <p>Block ProAttack-style injections and prompt-poisoning attempts before they reach your model. Only verified golden prompts pass through.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-green">&#x26d3;</div>
+                <h3>Blockchain Audit Trail</h3>
+                <p>Every prompt is SHA-256 hashed and anchored on the XPR Network. Immutable records provide tamper-proof provenance for compliance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-blue">&#x1f9ec;</div>
+                <h3>WebAuth Biometrics</h3>
+                <p>Authenticate prompt signers with biometric WebAuth on the XPR Network. No passwords, no seed phrases &mdash; just hardware-level trust.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-red">&#x1f6a8;</div>
+                <h3>Real-Time Interception</h3>
+                <p>Express.js middleware intercepts and verifies every prompt in transit. Unauthorized prompts are blocked with a 403 before they execute.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-amber">&#x1f4ca;</div>
+                <h3>CAUDIT &amp; TLENS Tokens</h3>
+                <p>Burn CAUDIT or TLENS tokens as proof-of-verification. Token economics align incentives with rigorous prompt hygiene.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-cyan">&#x2699;</div>
+                <h3>Drop-In Middleware</h3>
+                <p>One-line integration into any Express.js pipeline. PromptGuard sits between your API gateway and your LLM &mdash; zero refactoring required.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── How It Works ─── -->
+<section id="how-it-works">
+    <div class="container">
+        <div class="features-header">
+            <p class="section-label">How It Works</p>
+            <h2 class="section-title">Four Steps to Immutable Trust</h2>
+            <p class="section-sub">From prompt to proof in seconds. Every step is cryptographically verifiable.</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Write Golden Prompt</h3>
+                <p>Draft your verified prompt in the PromptGuard admin dashboard.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Sign with WebAuth</h3>
+                <p>Authenticate with biometric WebAuth on the XPR Network &mdash; no passwords needed.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Anchor On-Chain</h3>
+                <p>SHA-256 hash is written to the XPR blockchain via CAUDIT or TLENS token burn.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <h3>Verify &amp; Protect</h3>
+                <p>Middleware intercepts incoming prompts and verifies against the immutable audit trail.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Pricing ─── -->
+<section id="pricing">
+    <div class="container">
+        <div class="pricing-header">
+            <p class="section-label">Pricing</p>
+            <h2 class="section-title">Start Free, Scale When Ready</h2>
+            <p class="section-sub">Open-source at the core, with a licensed tier for teams that need more power and support.</p>
+        </div>
+        <div class="pricing-grid">
+            <!-- Free -->
+            <div class="price-card">
+                <p class="plan-name">Free &amp; Open Source</p>
+                <div class="plan-price"><span class="currency">$</span>0</div>
+                <p class="plan-desc">MIT-licensed core for individual developers and experimentation.</p>
+                <ul class="plan-features">
+                    <li><span class="check">&#10003;</span> Prompt hashing &amp; notarization</li>
+                    <li><span class="check">&#10003;</span> WebAuth biometric signing</li>
+                    <li><span class="check">&#10003;</span> XPR Network audit trail</li>
+                    <li><span class="check">&#10003;</span> Express.js middleware</li>
+                    <li><span class="check">&#10003;</span> SQLite audit log</li>
+                    <li><span class="check">&#10003;</span> Community support (GitHub)</li>
+                    <li><span class="cross">&#10005;</span> <span class="muted-feature">Multi-account access control</span></li>
+                    <li><span class="cross">&#10005;</span> <span class="muted-feature">Advanced analytics dashboard</span></li>
+                    <li><span class="cross">&#10005;</span> <span class="muted-feature">Priority email support</span></li>
+                    <li><span class="cross">&#10005;</span> <span class="muted-feature">Custom token integration</span></li>
+                </ul>
+                <a href="https://github.com/ubitquity/PromptGuard" class="btn-plan btn-free">View on GitHub</a>
+            </div>
+            <!-- Licensed -->
+            <div class="price-card featured">
+                <div class="popular-tag">Recommended</div>
+                <p class="plan-name">Licensed</p>
+                <div class="plan-price"><span class="currency">$</span>9<span style="font-size:32px">.95</span> <span class="period">/mo</span></div>
+                <p class="plan-desc">Full-featured plan for teams and production deployments.</p>
+                <ul class="plan-features">
+                    <li><span class="check">&#10003;</span> Everything in Free</li>
+                    <li><span class="check">&#10003;</span> Multi-account access control</li>
+                    <li><span class="check">&#10003;</span> Advanced analytics dashboard</li>
+                    <li><span class="check">&#10003;</span> Role-based prompt permissions</li>
+                    <li><span class="check">&#10003;</span> Bulk prompt notarization</li>
+                    <li><span class="check">&#10003;</span> Custom token integration</li>
+                    <li><span class="check">&#10003;</span> Webhook &amp; API notifications</li>
+                    <li><span class="check">&#10003;</span> Export audit reports (CSV/JSON)</li>
+                    <li><span class="check">&#10003;</span> Priority email support</li>
+                    <li><span class="check">&#10003;</span> Commercial use license</li>
+                </ul>
+                <a href="index.html" class="btn-plan btn-licensed">Get Licensed &rarr;</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Tech Stack ─── -->
+<section id="tech">
+    <div class="container">
+        <div class="features-header">
+            <p class="section-label">Tech Stack</p>
+            <h2 class="section-title">Built on Battle-Tested Infrastructure</h2>
+            <p class="section-sub">Lightweight, auditable, and production-ready &mdash; no bloated frameworks.</p>
+        </div>
+        <div class="tech-grid" style="justify-content:center;">
+            <span class="tech-pill">Node.js</span>
+            <span class="tech-pill">Express.js</span>
+            <span class="tech-pill">SQLite3</span>
+            <span class="tech-pill">XPR Network</span>
+            <span class="tech-pill">WebAuth Biometrics</span>
+            <span class="tech-pill">SHA-256</span>
+            <span class="tech-pill">@wharfkit/session</span>
+            <span class="tech-pill">CAUDIT Token</span>
+            <span class="tech-pill">TLENS Token</span>
+            <span class="tech-pill">MIT License</span>
+        </div>
+    </div>
+</section>
+
+<!-- ─── CTA ─── -->
+<section class="cta-section">
+    <h2>Protect Your AI Today</h2>
+    <p>Join developers who trust PromptGuard to keep their LLMs safe from prompt injection and poisoning attacks.</p>
+    <div class="hero-actions">
+        <a href="index.html" class="btn btn-primary">Launch App</a>
+        <a href="https://github.com/ubitquity/PromptGuard" class="btn btn-outline">Star on GitHub</a>
+    </div>
+</section>
+
+<!-- ─── Footer ─── -->
+<footer>
+    <div class="footer-inner">
+        <p class="footer-copy">&copy; 2026 UBITQUITY, INC. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="https://github.com/ubitquity/PromptGuard">GitHub</a>
+            <a href="index.html">App</a>
+            <a href="#pricing">Pricing</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
