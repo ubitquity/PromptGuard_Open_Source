@@ -500,6 +500,39 @@
         }
         .footer-links a:hover { color: var(--text-bright); }
 
+        /* ─── Scroll to Top ─── */
+        .scroll-top {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(108, 43, 217, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px);
+            transition: all 0.3s;
+            z-index: 99;
+        }
+        .scroll-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .scroll-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(108, 43, 217, 0.55);
+        }
+
         /* ─── Responsive ─── */
         @media (max-width: 768px) {
             .nav-links { display: none; }
@@ -705,6 +738,9 @@
     </div>
 </section>
 
+<!-- ─── Scroll to Top ─── -->
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">&#8593;</button>
+
 <!-- ─── Footer ─── -->
 <footer>
     <div class="footer-inner">
@@ -716,6 +752,13 @@
         </div>
     </div>
 </footer>
+
+<script>
+    const scrollBtn = document.getElementById('scrollTop');
+    window.addEventListener('scroll', () => {
+        scrollBtn.classList.toggle('visible', window.scrollY > 400);
+    });
+</script>
 
 </body>
 </html>
