@@ -5,6 +5,7 @@ const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(express.static(__dirname));
 
 // Initialize SQLite database for local audit logs
 const db = new sqlite3.Database(path.join(__dirname, 'secure.db'));
@@ -54,6 +55,10 @@ async function verifyWebAuthTransaction(txid, expectedHash, expectedAccount, exp
 app.post('/api/verify', async (req, res) => {
     const { account, hash, txid, token } = req.body;
     
+    if (!account || !hash || !txid || !token) {
+        return res.status(400).json({ success: false, error: "Missing required fields: account, hash, txid, token." });
+    }
+
     if (account !== 'ubitquity1') {
         return res.status(403).json({ success: false, error: "Unauthorized WebAuth account. ubitquity1 required." });
     }
@@ -65,6 +70,7 @@ app.post('/api/verify', async (req, res) => {
     
     const stmt = db.prepare("INSERT INTO prompt_logs (account, hash, txid, token_used) VALUES (?, ?, ?, ?)");
     stmt.run(account, hash, txid, token, (err) => {
+        stmt.finalize();
         if (err) return res.status(500).json({ success: false });
         res.json({ success: true, message: "Prompt audited for ubitquity1." });
     });
